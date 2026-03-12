@@ -2,8 +2,37 @@ syntax = "proto3";
 
 package auth;
 
-option go_package = "";
+option go_package = "github.com/QBL25079/SSO/protos/gen/go/sso;sso";
 
 service Auth {
-    
+    rpc register (RegisterRequest) returns (RegisterResponse);
+    rpc Login (LoginRequest) returns (LoginResponse);
+    rpc IsAdmin (IsAdminRequest) returns (IsAdminResponse);
+}
+
+message RegisterRequest {
+    string email = 1; // Email for registration
+    string password = 2; // User`s password for registration 
+}
+
+message RegisterResponse {
+    int64 user_id = 1; // User ID after registration
+}
+
+message LoginRequest {
+    string email = 1; // Email for login
+    string password = 2; // User`s password for logi in
+    int32 app_id = 3; // ID application for logging in
+}
+
+message LoginResponse {
+    string token = 1; // Auth token of the logged user
+}
+
+message IsAdminRequest {
+    int64 user_id = 1; // User ID to validate
+}
+
+message IsAdminResponse {
+    bool is_admin = 1; // Admin indicator
 }
