@@ -36,3 +36,4 @@ message IsAdminRequest {
 message IsAdminResponse {
     bool is_admin = 1; // Admin indicator
 }
+
