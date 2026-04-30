@@ -10,12 +10,14 @@ import (
 	"github.com/QBL25079/SSO/internal/domain/models"
 	"github.com/QBL25079/SSO/internal/lib/jwt"
 	"github.com/QBL25079/SSO/internal/storage"
-	
+
 	"golang.org/x/crypto/bcrypt"
 )
 
 var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrInvalidAppID       = errors.New("Invalid app id")
+	ErrUserExists         = errors.New("User exists")
 )
 
 type Auth struct {
@@ -104,9 +106,12 @@ func (a *Auth) RegisterNewUser(ctx context.Context, email, password string) (int
 	id, err := a.userSaver.SaveUser(ctx, email, passHash)
 
 	if err != nil {
-		log.Error("failed to save user")
+		if errors.Is(err, storage.ErrUserExists) {
+			log.Warn("user  already exists")
+		}
+		log.Error("failed to save user") 
 
-		return 0, fmt.Errorf("%s: %d", op, err)
+		return 0, fmt.Errorf("%s: %d", op, ErrUserExists)
 	}
 
 	log.Info("User registered")
@@ -115,5 +120,23 @@ func (a *Auth) RegisterNewUser(ctx context.Context, email, password string) (int
 }
 
 func (a *Auth) IsAdmin(ctx context.Context, userID int64) (bool, error) {
-	panic("not implemented")
+	const op = "auth.IsAdmin"
+
+	log := a.log.With(slog.String("op: ", op), slog.Int64("userID: ", userID))
+
+	log.Info("Checking if user is admin")
+
+	isAdmin, err := a.userProvider.IsAdmin(ctx, userID)
+
+	if err != nil {
+		if errors.Is(err, storage.ErrAppNotFound) {
+			log.Warn("user not found")
+			return false, fmt.Errorf("%s: %d", op, ErrInvalidAppID)
+		}
+		return false, fmt.Errorf("%s: %d", op, err)
+	}
+
+	log.Info("Checked if user is admin: ", slog.Bool("is_admin: ", isAdmin))
+
+	return isAdmin, nil
 }
